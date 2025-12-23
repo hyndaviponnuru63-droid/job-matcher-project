@@ -1,0 +1,4 @@
+We are looking for a machine learning engineer with good Python programming
+skills. The candidate should have experience in data analysis, pandas, numpy,
+and scikit-learn. Knowledge of natural language processing and text analysis
+is a plus. This is an entry-level position for fresh graduates.

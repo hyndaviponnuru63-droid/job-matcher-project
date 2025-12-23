@@ -1,0 +1,5 @@
+Python developer with strong knowledge of machine learning and data analysis.
+Experienced in using pandas, numpy, and scikit-learn for data processing.
+Familiar with natural language processing, text preprocessing, and building
+basic machine learning models. Looking for an entry-level role to apply
+technical skills and learn industry best practices.
