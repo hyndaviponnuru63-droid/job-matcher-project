@@ -1,36 +1,109 @@
-import os
-import re
 import streamlit as st
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
+import pandas as pd
+from fpdf import FPDF
 
-# -----------------------------
-# Text cleaning function
-# -----------------------------
-def clean_text(text):
-    text = text.lower()
-    text = re.sub(r"[^a-zA-Z ]", " ", text)
-    text = re.sub(r"\s+", " ", text)
-    return text.strip()
+from job_matcher import get_top_n_jobs
+#new one for the resume adding
+# ------------------ PAGE CONFIG ------------------
+st.set_page_config(
+    page_title="Job Matcher Application",
+    layout="wide"
+)
 
-# -----------------------------
-# Streamlit interface
-# -----------------------------
-st.title("Job Matcher Project")
-st.write("Compare your resume with a job description and get match %")
+st.title("Job Matcher Result")
 
-resume_text = st.text_area("Paste Resume Text Here")
-job_text = st.text_area("Paste Job Description Here")
+# ------------------ SAMPLE JOB DATA ------------------
+jobs = [
+    {
+        "title": "Python Developer",
+        "company": "ABC Corp",
+        "skills": {
+            "python": 0.5,
+            "sql": 0.3,
+            "git": 0.2
+        }
+    },
+    {
+        "title": "Data Analyst",
+        "company": "XYZ Ltd",
+        "skills": {
+            "excel": 0.4,
+            "sql": 0.4,
+            "python": 0.2
+        }
+    },
+    {
+        "title": "Backend Engineer",
+        "company": "TechSoft",
+        "skills": {
+            "python": 0.6,
+            "django": 0.3,
+            "api": 0.1
+        }
+    }
+]
 
-if st.button("Check Match"):
-    if resume_text.strip() == "" or job_text.strip() == "":
-        st.warning("Please enter both resume and job description!")
-    else:
-        clean_resume = clean_text(resume_text)
-        clean_job = clean_text(job_text)
+# ------------------ RESUME UPLOAD ------------------
+st.subheader("Upload Resume")
+uploaded_file = st.file_uploader(
+    "Upload your resume (PDF or DOCX)",
+    type=["pdf", "docx"]
+)
 
-        vectorizer = TfidfVectorizer(stop_words="english")
-        vectors = vectorizer.fit_transform([clean_resume, clean_job])
-        similarity_score = cosine_similarity(vectors)[0][1]
+# ------------------ PROCESS AFTER UPLOAD ------------------
+if uploaded_file is not None:
 
-        st.success(f"Match Percentage: {similarity_score * 100:.2f}%")
+    # For now we simulate extracted skills
+    candidate_skills = ["python", "sql", "excel"]
+
+    # Get top job matches
+    top_jobs = get_top_n_jobs(
+        candidate_skills=candidate_skills,
+        jobs=jobs,
+        top_n=3
+    )
+
+    # Convert results to DataFrame
+    df = pd.DataFrame(top_jobs)
+
+    st.subheader("Top Job Matches")
+    st.dataframe(df, use_container_width=True)
+
+    # ------------------ CSV DOWNLOAD ------------------
+    csv_data = df.to_csv(index=False).encode("utf-8")
+
+    st.download_button(
+        label="Download CSV",
+        data=csv_data,
+        file_name="job_matches.csv",
+        mime="text/csv"
+    )
+
+    # ------------------ PDF DOWNLOAD (FIXED) ------------------
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+
+    pdf.cell(200, 10, "Top Job Matches", ln=True, align="C")
+    pdf.ln(10)
+
+    for _, row in df.iterrows():
+        pdf.cell(
+            200,
+            10,
+            f"{row['title']} at {row['company']} - Score: {row['score']}%",
+            ln=True
+        )
+
+    pdf_bytes = pdf.output(dest="S").encode("latin-1")
+
+    st.download_button(
+        label="Download PDF",
+        data=pdf_bytes,
+        file_name="job_matches.pdf",
+        mime="application/pdf"
+    )
+
+# ------------------ FOOTER ------------------
+st.markdown("---")
+st.markdown("Built with Streamlit | Job Matcher Project")
